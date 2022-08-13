@@ -1,0 +1,822 @@
+
+# coding: utf-8
+
+# In[1]:
+
+
+import numpy as np
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+
+# In[2]:
+
+
+# load dataset
+df = pd.read_csv('../data/AB_NYC_2019.csv')
+df.head()
+
+
+# In[3]:
+
+
+# see the data types of each columns
+print(df.dtypes)
+
+
+# In[4]:
+
+
+# analysise the numeric features of the dataset
+display(df.describe().transpose())
+
+
+# In[5]:
+
+
+# null value count
+print(df.isnull().sum())
+
+
+# ### Univariate analysis
+
+# In[6]:
+
+
+#Neighbourhood_group analysis
+
+
+# In[7]:
+
+
+nh_group = df.groupby(['neighbourhood_group'])['neighbourhood_group'].count().reset_index(name='counts')
+
+groups = list(nh_group.neighbourhood_group)
+counts = list(nh_group.counts)
+
+nh_group
+
+
+# In[8]:
+
+
+#Plot neighbourhood_group
+
+def addlabels(x, y, z):
+    for i in range(len(x)):
+        plt.text(i, y[i], z[i], ha = 'center')
+
+ax = nh_group.plot.bar(x='neighbourhood_group', y='counts', rot=0,                         title='Counts of Airbnb in different neighbourhood group')
+
+cnt_percentage = [f'{str(round(d*100/sum(counts),1))}%' for d in counts]
+addlabels(groups, counts, cnt_percentage)
+
+plt.savefig('../report/fig/plot_1.png',  bbox_inches='tight')
+plt.show()
+
+
+# In[9]:
+
+
+#Neighbourhood analysis
+
+mpn_df = pd.DataFrame(df.neighbourhood.value_counts())
+mpn_df.reset_index(inplace=True)
+
+mpn_df.rename(columns={'index':'Neighbourhood', 'neighbourhood':'P_Count'}, inplace=True)
+
+print(f'Total Number of Neighborhood is: {len(mpn_df)}\n')
+
+
+# In[10]:
+
+
+cm_percnt = []
+sum_percent = 0
+for index, row in mpn_df.iterrows():
+    cnt = row['P_Count']
+    
+    if index == len(mpn_df)-1:
+        cm_percnt.append(100.00)
+        break
+    
+    percent = cnt * 100 / sum(mpn_df.P_Count)
+    sum_percent += percent
+    
+    cm_percnt.append(sum_percent)
+
+_high = list(range(10,101,10))
+
+cnt_per = [len([d for d in cm_percnt if d<=h]) for h in _high]
+
+plt.plot(_high, cnt_per)
+plt.xticks(range(0, 101, 10))
+plt.yticks(range(0, max(cnt_per)+10, 20))
+plt.xlabel('Percentage of total Airbnb')
+plt.ylabel('Number of Top Neighborhood')
+
+plt.title(f'Percentage of Airbnb situated on top n-th neighborhood')
+plt.savefig('../report/fig/plot_2.png',  bbox_inches='tight')
+
+plt.show()
+
+per_20 = sum(list(mpn_df.P_Count)[:20]) * 100 / sum(mpn_df.P_Count)
+print(f'\nTop 20 Neighborhood contains {round(per_20, 2)}% of total Airbnb')
+
+
+# In[11]:
+
+
+# top 20 neighbor
+top_n_count = 20
+mpn_df.head(top_n_count)
+
+
+# In[12]:
+
+
+#Plot neighbourhood
+def addlabels(x, y, z):
+    for i in range(len(x)):
+        plt.text(i, y[i], z[i], ha = 'center')
+        
+
+groups = list(mpn_df.head(top_n_count).Neighbourhood)
+counts = list(mpn_df.head(top_n_count).P_Count)
+
+ax = mpn_df.head(top_n_count).plot.bar(x='Neighbourhood', y='P_Count', rot=75,                 title='Counts of Airbnb in different neighbourhood', figsize=(12,8))
+
+ax.set_xticklabels(groups, fontsize = 10)
+
+cnt_percentage = [f'{str(round(d*100/sum(list(mpn_df.P_Count)),1))}%' for d in counts]
+addlabels(groups, counts, cnt_percentage)
+
+plt.savefig('../report/fig/plot_3.png',  bbox_inches='tight')
+plt.show()
+
+
+# In[13]:
+
+
+def get_count(_neighborhood):
+    tmp = list(mpn_df.P_Count[mpn_df.Neighbourhood==_neighborhood])
+    return tmp[0]
+
+nhc_df = df[['latitude', 'longitude', 'neighbourhood']]
+nhc_df['P_Count'] = nhc_df['neighbourhood'].apply(get_count)
+
+
+# In[14]:
+
+
+import urllib
+plt.figure(figsize=(12,8))
+
+url = 'https://upload.wikimedia.org/wikipedia/commons/e/ec/Neighbourhoods_New_York_City_Map.PNG'
+nyc_img=plt.imread(urllib.request.urlopen(url))
+
+plt.imshow(nyc_img, zorder=0, extent=[-74.258, -73.7, 40.49, 40.92])
+ax = plt.gca()
+
+cnt_list = list(mpn_df.P_Count)
+sub_df = nhc_df[nhc_df.P_Count > cnt_list[20]]
+
+sub_df.plot(kind='scatter', x='longitude', y='latitude', label='P_Count',
+            c='P_Count', ax=ax, cmap=plt.get_cmap('jet'), colorbar=True, alpha=0.4, zorder=5)
+
+plt.savefig('../report/fig/plot_4.png',  bbox_inches='tight')
+plt.show()
+
+
+# In[15]:
+
+
+#room_type analysis
+
+arbnb_type = df.groupby(['room_type'])['room_type'].count().reset_index(name='counts')
+types = list(arbnb_type.room_type)
+counts = list(arbnb_type.counts)
+
+arbnb_type
+
+
+# In[16]:
+
+
+#plot room_type data
+
+explode = (0.05, 0.05, 0.1)
+
+fig1, ax1 = plt.subplots()
+ax1.pie(counts, explode=explode, labels=types, autopct='%1.1f%%', shadow=True,          colors=['#FEAE65', '#7CDDDD', '#AADEA7'])
+ax1.axis('equal')
+
+plt.title('Percentage of Different \ntypes of Airbnb\n')
+plt.savefig('../report/fig/plot_5.png',  bbox_inches='tight')
+
+plt.show()
+
+
+# In[17]:
+
+
+# analyze minimum night stay
+
+mn_df = df.minimum_nights.fillna(0)
+
+print(f'Minimum: {mn_df.min()} and Maximum: {mn_df.max()}')
+
+plt.boxplot(mn_df, vert=False)
+plt.title('Minimum night stay in Airbnb dataset')
+plt.savefig('../report/fig/plot_6.png',  bbox_inches='tight')
+plt.show()
+
+
+# In[18]:
+
+
+# analyze host listing counts
+
+chl_df = df.calculated_host_listings_count.fillna(0)
+plt.boxplot(chl_df, vert=False)
+plt.title('Host listing count of Airbnb data')
+
+print(f'Minimum: {chl_df.min()} and Maximum: {chl_df.max()}')
+
+plt.savefig('../report/fig/plot_7.png',  bbox_inches='tight')
+plt.show()
+
+
+# In[19]:
+
+
+# get top-most host
+
+top_host = df.host_id.value_counts().head(10)
+
+top_host_df = pd.DataFrame(top_host)
+top_host_df.reset_index(inplace=True)
+top_host_df.rename(columns={'index':'Host_ID', 'host_id':'P_Count'}, inplace=True)
+top_host_df
+
+
+# In[20]:
+
+
+# plot top most host
+
+top_host_plot=sns.barplot(x="Host_ID", y="P_Count", data=top_host_df, palette='Blues_d')
+top_host_plot.set_title('Hosts with the most listings Airbnb in NYC')
+top_host_plot.set_ylabel('Count of listings')
+top_host_plot.set_xlabel('Host IDs')
+top_host_plot.set_xticklabels(top_host_plot.get_xticklabels(), rotation=45)
+
+plt.savefig('../report/fig/plot_8.png',  bbox_inches='tight')
+plt.show()
+
+
+# In[21]:
+
+
+# analyze review column
+
+review_df = df.number_of_reviews.fillna(0)
+plt.boxplot(review_df, vert=False)
+plt.title('Number of review in the Airbnb dataset')
+
+print(f'Minimum: {review_df.min()} and Maximum: {review_df.max()}')
+
+plt.savefig('../report/fig/plot_9.png',  bbox_inches='tight')
+plt.show()
+
+
+# In[22]:
+
+
+# plot price data
+
+df.price.plot(kind='box', vert=False, figsize=(8,5))
+
+plt.title('Boxplot of the price of Airbnb')
+plt.xticks(list(range(0, int(max(df.price)*1.1), 1000)))
+
+plt.savefig('../report/fig/plot_10.png',  bbox_inches='tight')
+plt.show()
+
+
+# In[23]:
+
+
+# plot price data (scatter plot)
+
+plt.scatter(df.price.index, df.price)
+plt.title('Scatter plot of the price of Airbnb')
+plt.xlabel('index of Airbnb')
+plt.ylabel('price')
+plt.yticks(list(range(0, int(max(df.price)*1.1), 1000)))
+
+plt.savefig('../report/fig/plot_11.png',  bbox_inches='tight')
+plt.show()
+
+
+# ### Bivariate analysis
+
+# In[24]:
+
+
+# make new df with numaric features
+
+cor_df = df[['price', 'minimum_nights', 'number_of_reviews', 'availability_365']]
+cor_df.head()
+
+
+# In[25]:
+
+
+# plot pair plot
+p_plot = sns.pairplot(cor_df, kind='scatter', )
+p_plot.fig.suptitle('Pair plot of all numeric features', y=1.05)
+plt.savefig('../report/fig/plot_12.png',  bbox_inches='tight')
+plt.show()
+
+
+# In[26]:
+
+
+#calculate correlation matrix
+corr_matrix = cor_df.corr()
+corr_matrix
+
+
+# In[27]:
+
+
+# plot correlation matrix
+plt.figure(figsize=(10, 9))
+
+vmax = (sorted(list(set(np.reshape(corr_matrix.values,         (1, len(corr_matrix)*len(corr_matrix)))[0]))))[-2]+0.05
+
+vmin = min(corr_matrix.min())
+
+corr_hm = sns.heatmap(corr_matrix, annot=True, vmin=vmin, vmax=vmax, cmap="YlGnBu")
+
+corr_hm.set(xlabel = 'Airbnb NYC features', ylabel = 'Airbnb NYC features',              title = "Correlation matrix of Airbnb dataset\n")
+
+corr_hm.set_xticklabels(corr_matrix.index, rotation=45)
+
+plt.savefig('../report/fig/plot_15.png',  bbox_inches='tight')
+plt.show()
+
+
+# ### Bivariate analysis
+
+# In[28]:
+
+
+# price vs neighbourhood calculation
+
+nhg_df = df[['neighbourhood_group', 'price']]
+nhg_mean = nhg_df.groupby('neighbourhood_group').mean()
+nhg_median = nhg_df.groupby('neighbourhood_group').median()
+
+nhg_mean.rename(columns={'price':'Mean Price'}, inplace=True)
+nhg_median.rename(columns={'price':'Median Price'}, inplace=True)
+
+nhg_mean_meadian = nhg_mean.join(nhg_median)
+nhg_mean_meadian.insert(loc=0, column='Neighbour Group', value=list(nhg_mean_meadian.index))
+nhg_mean_meadian.reset_index(inplace=True, drop='index')
+
+
+# In[29]:
+
+
+# price vs neighbourhood plot
+
+labels = list(nhg_mean_meadian['Neighbour Group'])
+
+_means = list(nhg_mean_meadian['Mean Price'])
+_medians = list(nhg_mean_meadian['Median Price'])
+
+width = 0.35
+
+fig, ax = plt.subplots(figsize=(10,6))
+
+x = np.arange(len(nhg_mean_meadian))
+
+ax.set_ylabel('Airbnb price (per night)',  fontsize = 12)
+ax.set_title('Airbnb price with Neighbor group', fontsize = 16)
+ax.set_xlabel('Neighbor group', fontsize = 12)
+
+ax.set_xticks(np.arange(len(labels)))
+ax.set_xticklabels(labels, rotation = 0, fontsize = 11)
+
+rects1 = ax.bar(x - width/2, _means, width, label='Mean')
+rects2 = ax.bar(x + width/2, _medians, width, label='Median')
+
+ax.legend(bbox_to_anchor=(1, 1),fancybox=True, shadow=True, ncol=1)
+
+def addlabels(x, m, w):
+    for i in range(len(x)):
+        plt.text(i, m[i], f'{str(round(m[i], 1))}', ha = 'right', fontsize = 10)
+        plt.text(i, w[i], f'{str(round(w[i], 1))}', ha = 'left', fontsize = 10)
+
+addlabels(labels, _means, _medians)
+
+plt.savefig('../report/fig/plot_16.png',  bbox_inches='tight')
+plt.show()
+
+
+# In[30]:
+
+
+# most costly neighbourhood
+nh_df = df[['neighbourhood', 'price']]
+
+nh_df = nh_df.groupby('neighbourhood').describe().transpose()
+
+nh_df = nh_df.reset_index(level=[0,1])
+
+del nh_df['level_0']
+
+nh_df.head()
+
+nh_df.rename(columns={'level_1':'Neighbourhood'}, inplace=True)
+
+nh_df = nh_df.transpose()
+nh_df.columns = nh_df.iloc[0] 
+nh_df = nh_df[1:]
+
+nh_df = nh_df.rename_axis(None)
+neighborhoods = list(nh_df.index)
+nh_df = nh_df.reset_index(drop=True)
+nh_df = nh_df.rename_axis(None, axis="columns")
+
+nh_df.insert(0, "neighborhood", neighborhoods)
+
+nh_df.head()
+
+
+# In[31]:
+
+
+nh_df["mean"] = pd.to_numeric(nh_df["mean"])
+
+mcn_df1 = nh_df[['neighborhood', 'count', 'mean', '50%',                  'min', 'max', 'std']].nlargest(10, 'mean')
+mcn_df1 = mcn_df1.fillna(0)
+
+mcn_df1.reset_index(drop=True, inplace=True)
+
+mcn_df1
+
+
+# In[32]:
+
+
+nh_df["50%"] = pd.to_numeric(nh_df["50%"])
+
+mcn_df2 = nh_df[['neighborhood', 'count', 'mean', '50%',                  'min', 'max', 'std']].nlargest(10, '50%')
+mcn_df2 = mcn_df2.fillna(0)
+
+mcn_df2.reset_index(drop=True, inplace=True)
+
+mcn_df2
+
+
+# In[33]:
+
+
+common_nh = set(mcn_df1.neighborhood).intersection(set(mcn_df2.neighborhood))
+print(common_nh)
+
+
+# In[34]:
+
+
+def neighborhood_price(in_df, fig_type, fig_name='test_fig'):
+    labels = list(in_df['neighborhood'].unique())
+
+    _means = list(in_df['mean'])
+    _medians = list(in_df['50%'])
+
+    width = 0.45
+
+    fig, ax = plt.subplots(figsize=(12,6))
+
+    ax.set_ylabel('Airbnb price (per night)',  fontsize = 12)
+    ax.set_title('Airbnb price with Neighborhoods based on ' + fig_type, fontsize = 16)
+    ax.set_xlabel('Neighborhoods', fontsize = 12)
+
+    ax.set_xticks(np.arange(len(labels)))
+    ax.set_xticklabels(labels, rotation = 45, fontsize = 11)
+    
+    x = np.arange(len(in_df))
+    rects1 = ax.bar(x - width/2, _means, width, label='Mean')
+    rects2 = ax.bar(x + width/2, _medians, width, label='Median')
+
+    ax.legend(bbox_to_anchor=(1, 1),fancybox=True, shadow=True, ncol=1)
+
+    def addlabels(x, m, w):
+        for i in range(len(x)):
+            plt.text(i-.06, (m[i]*101/100), f'{str(round(m[i], 1))}', ha = 'right', fontsize = 10)
+            plt.text(i+.06, (w[i]*101/100), f'{str(round(w[i], 1))}', ha = 'left', fontsize = 10)
+
+    addlabels(labels, _means, _medians)
+    
+    plt.savefig('../report/fig/'+fig_name,  bbox_inches='tight')
+    
+    return plt.show()
+
+
+# In[35]:
+
+
+neighborhood_price(mcn_df1, 'Mean price', 'plot_17.png')
+neighborhood_price(mcn_df2, 'Median price', 'plot_18.png')
+
+
+# In[36]:
+
+
+in_df = pd.concat([mcn_df1, mcn_df2]).drop_duplicates()
+
+cmn_lab = list(common_nh)
+mean_lab = [d for d in mcn_df1['neighborhood'] if d not in common_nh]
+med_lab = [d for d in mcn_df2['neighborhood'] if d not in common_nh]
+
+cmn_std = []
+men_std = []
+med_std = []
+
+for ind, row in in_df.iterrows():
+    if row['neighborhood'] in mean_lab:
+        men_std.append(row['std'])
+    elif row['neighborhood'] in med_lab:
+        med_std.append(row['std'])
+    else:
+        cmn_std.append(row['std'])
+
+labels = cmn_lab + med_lab + mean_lab
+values = cmn_std + med_std + men_std
+
+r4 = list(range(1, len(in_df)+1))
+r1 = r4[:len(cmn_lab)]
+r2 = r4[len(r1):len(cmn_lab)+len(r1)]
+r3 = r4[len(r1+r2):len(cmn_lab)+len(r1+r2)]
+
+
+# In[37]:
+
+
+barWidth = 0.95
+
+fig, ax = plt.subplots(figsize=(12,8))
+ax.set_title('Std. deviation of the price of top-15 neighborhoods', fontsize = 16)
+ 
+# Create barplot
+plt.bar(r1, cmn_std, width = barWidth, color = (0.3,0.1,0.4,0.6), label='std. of common neighborhood')
+plt.bar(r2, med_std, width = barWidth, color = (0.3,0.5,0.4,0.6), label='std. of median neighborhood')
+plt.bar(r3, men_std, width = barWidth, color = (0.3,0.9,0.4,0.6), label='std. of mean neighborhood')
+ 
+# Create legend
+plt.legend()
+ 
+plt.xticks([r + barWidth for r in range(len(r4))], labels, rotation=90)
+
+for i in range(len(r4)):
+    plt.text(x = r4[i], y = (values[i]*101/100), s=(round(values[i],1)), ha='center', size = 12)
+
+plt.savefig('../report/fig/plot_19.png',  bbox_inches='tight')
+plt.show()
+
+
+# In[38]:
+
+
+# price vs apt.type
+
+apt_df = df[['room_type', 'price']]
+apt_mean = apt_df.groupby('room_type').mean()
+apt_median = apt_df.groupby('room_type').median()
+
+apt_mean.rename(columns={'price':'Mean Price'}, inplace=True)
+apt_median.rename(columns={'price':'Median Price'}, inplace=True)
+
+apt_mean_meadian = apt_mean.join(apt_median)
+apt_mean_meadian.insert(loc=0, column='Room Type', value=list(apt_mean_meadian.index))
+apt_mean_meadian.reset_index(inplace=True, drop='index')
+
+apt_mean_meadian
+
+
+# In[39]:
+
+
+# price vs apt.type ploting
+
+labels = list(apt_mean_meadian['Room Type'])
+
+_means = list(apt_mean_meadian['Mean Price'])
+_medians = list(apt_mean_meadian['Median Price'])
+
+width = 0.35
+
+fig, ax = plt.subplots(figsize=(10,6))
+
+x = np.arange(len(apt_mean_meadian))
+
+ax.set_ylabel('Airbnb price (per night)')
+ax.set_title('Airbnb price with apartment type')
+
+ax.set_xlabel('apartment type')
+
+ax.set_xticks(np.arange(len(labels)))
+ax.set_xticklabels(labels, rotation = 0)
+
+rects1 = ax.bar(x - width/2, _means, width, label='Mean')
+rects2 = ax.bar(x + width/2, _medians, width, label='Median', color='#f0bc85')
+
+ax.legend(bbox_to_anchor=(1, 1),fancybox=True, shadow=True, ncol=1)
+
+def addlabels(x, m, w):
+    for i in range(len(x)):
+        plt.text(i, (m[i]*101/100), f'{str(round(m[i], 1))}', ha = 'right', fontsize = 10)
+        plt.text(i, (w[i]*101/100), f'{str(round(w[i], 1))}', ha = 'left', fontsize = 10)
+
+addlabels(labels, _means, _medians)
+
+plt.savefig('../report/fig/plot_20.png',  bbox_inches='tight')
+plt.show()
+
+
+# In[40]:
+
+
+# neighbourhood_group vs apt.type
+
+apt_nhg_df = df[['id', 'room_type', 'neighbourhood_group']]
+apt_nhg_df = apt_nhg_df.groupby(['room_type','neighbourhood_group'], as_index=False)['id'].count()
+
+apt_nhg_df.rename(columns={'id':'ID_Counts','neighbourhood_group': 'Neighbourhood_Group',                             'room_type': 'Room_Type' }, inplace=True)
+apt_nhg_df
+
+
+# In[41]:
+
+
+# neighbourhood_group vs apt.type ploting
+
+entire_home = list(apt_nhg_df['ID_Counts'][apt_nhg_df['Room_Type'] == 'Entire home/apt'])
+private_apt = list(apt_nhg_df['ID_Counts'][apt_nhg_df['Room_Type'] == 'Private room'])
+shared_apt = list(apt_nhg_df['ID_Counts'][apt_nhg_df['Room_Type'] == 'Shared room'])
+
+
+# In[42]:
+
+
+labels = list(apt_nhg_df['Neighbourhood_Group'].unique())
+
+entire_home = list(apt_nhg_df['ID_Counts'][apt_nhg_df['Room_Type'] == 'Entire home/apt'])
+private_apt = list(apt_nhg_df['ID_Counts'][apt_nhg_df['Room_Type'] == 'Private room'])
+shared_apt = list(apt_nhg_df['ID_Counts'][apt_nhg_df['Room_Type'] == 'Shared room'])
+
+width = 0.25
+
+fig, ax = plt.subplots(figsize=(12,6))
+
+ax.set_title('Neighborhood group wise counts of different types of Airnbs')
+
+x = np.arange(len(labels))
+
+ax.set_xticks(np.arange(len(labels)))
+ax.set_xticklabels(labels, rotation = 0)
+
+rects1 = ax.bar(x-width, entire_home, width, label='Entire Apt', color='#003f5c')
+rects2 = ax.bar(x, private_apt, width, label='Private Apt', color='#f0bc85')
+rects3 = ax.bar(x + width, shared_apt, width, label='Shared Apt', color='#75a67c')
+
+ax.legend(bbox_to_anchor=(1, 1),fancybox=True, shadow=True, ncol=1)
+
+def addlabels(x, e, p, s):
+    for i in range(len(x)):
+        plt.text(i+.25, s[i], f'{str(round(s[i], 1))}', ha = 'center', fontsize = 11)
+        plt.text(i, p[i], f'{str(round(p[i], 1))}', ha = 'center', fontsize = 11)
+        plt.text(i-.25, e[i], f'{str(round(e[i], 1))}', ha = 'center', fontsize = 11)
+
+
+addlabels(labels, entire_home, private_apt, shared_apt)
+
+plt.savefig('../report/fig/plot_21.png',  bbox_inches='tight')
+plt.show()
+
+
+# In[43]:
+
+
+# Neighborhood group Vs Number of review
+
+nhg_rev_df = df[['number_of_reviews', 'neighbourhood_group']].groupby('neighbourhood_group', as_index=False).sum()
+nhg_rev_df
+
+
+# In[44]:
+
+
+fig, ax = plt.subplots(figsize=(6,6))
+ax.set_title('Review percentage in different Neighborhood groups')
+
+ax.pie(nhg_rev_df.number_of_reviews,labels=nhg_rev_df.neighbourhood_group, autopct='%.0f%%',shadow=True)
+  
+ax.add_artist(plt.Circle((0,0),0.8,color='white'))
+plt.savefig('../report/fig/plot_22.png',  bbox_inches='tight')
+
+plt.show()
+
+
+# In[46]:
+
+
+reviews = list(nhg_rev_df.number_of_reviews)
+airbnb_counts = list(nh_group.counts)
+
+review_per_airbnbns = [reviews[i]/airbnb_counts[i] for i in range(len(reviews))]
+
+nhg_rev_df.insert(2, 'review_per_airbnbn', review_per_airbnbns)
+
+nhg_rev_df.rename(columns={'neighbourhood_group':'Neighborhood Group',                            'review_per_airbnbn':'Reviews Per Airbnbs'}, inplace=True)
+
+nhg_rev_df
+
+
+# In[47]:
+
+
+def addlabels(x, y):
+    for i in range(len(x)):
+        plt.text(i, (y[i]*101/100), round(y[i],2), ha = 'center')
+
+ax = nhg_rev_df.plot.bar(x='Neighborhood Group', y='Reviews Per Airbnbs',                         title='Reviews per Aribnb Vs Neighborhood groups', figsize=(10,8))
+
+ax.set_xticks(np.arange(len(nhg_rev_df)))
+ax.set_xticklabels(nhg_rev_df['Neighborhood Group'],  rotation = 0, fontsize = 11)
+
+addlabels(list(nhg_rev_df['Neighborhood Group']), list(nhg_rev_df['Reviews Per Airbnbs']))
+
+plt.savefig('../report/fig/plot_23.png',  bbox_inches='tight')
+plt.show()
+
+
+# In[48]:
+
+
+# Airbnb type Vs Number of review
+
+type_rev_df = df[['number_of_reviews', 'room_type']].groupby('room_type', as_index=False).sum()
+type_rev_df
+
+
+# In[49]:
+
+
+fig, ax = plt.subplots(figsize=(6,6))
+ax.set_title('Review percentage in different Airbnb types')
+
+ax.pie(type_rev_df.number_of_reviews, labels=type_rev_df.room_type, autopct='%.0f%%',shadow=True)  
+ax.add_artist(plt.Circle((0,0),0.8,color='white'))
+plt.savefig('../report/fig/plot_24.png',  bbox_inches='tight')
+
+plt.show()
+
+
+# In[50]:
+
+
+reviews = list(type_rev_df.number_of_reviews)
+airbnb_counts = list(arbnb_type.counts)
+
+review_per_airbnbns = [reviews[i]/airbnb_counts[i] for i in range(len(reviews))]
+
+type_rev_df.insert(2, 'review_per_airbnbn', review_per_airbnbns)
+
+type_rev_df.rename(columns={'room_type':'Room Type',                            'review_per_airbnbn':'Reviews Per Airbnbs'}, inplace=True)
+
+type_rev_df
+
+
+# In[51]:
+
+
+def addlabels(x, y):
+    for i in range(len(x)):
+        plt.text(i, (y[i]*101/100), round(y[i],2), ha = 'center')
+
+ax = type_rev_df.plot.bar(x='Room Type', y='Reviews Per Airbnbs',                         title='Review per Aribnb Vs Airbnb Type', figsize=(8,6))
+
+ax.set_xticks(np.arange(len(type_rev_df)))
+ax.set_xticklabels(type_rev_df['Room Type'],  rotation = 0, fontsize = 11)
+
+addlabels(list(type_rev_df['Room Type']), list(type_rev_df['Reviews Per Airbnbs']))
+
+plt.savefig('../report/fig/plot_25.png',  bbox_inches='tight')
+plt.show()
+
