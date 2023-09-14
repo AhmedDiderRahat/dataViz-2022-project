@@ -14,7 +14,8 @@ Airbnb stands for Air Bed and Breakfast. According to business model navigator �
 ### The data set
 The data set is collected from kaggle.com. According to Kaggle, “Since 2008, guests and hosts have used Airbnb to expand on traveling possibilities and present a more unique, personalized way of experiencing the world. This dataset describes the listing activity and metrics in NYC, NY for 2019. This data file includes all needed information to find out more about hosts, geographical availability, and necessary metrics to make predictions and draw conclusions”.
 Features of the Dataset:
-	1. id: The id assigned to each airbnb to identify them uniquely.
+
+ 	1. id: The id assigned to each airbnb to identify them uniquely.
 	2. name: The name assigned to each airbnb.
 	3. host_id: The id assigned to each host to identify them uniquely.
 	4. host_name: The name assigned to each host.
@@ -34,9 +35,9 @@ Features of the Dataset:
 
 
 ### The Analysis: 
-	All the analysis are place on the report. Please have a look to the given [link](https://github.com/AhmedDiderRahat/dataViz-2022-project/blob/main/report/group_report_new.pdf) 
+All the analysis are place on the report. Please have a look to the given [link](https://github.com/AhmedDiderRahat/dataViz-2022-project/blob/main/report/group_report_new.pdf) 
 
 
 
 ### Conclusion: 
-	In this project we demonstarte the best practices for data visualization. We try to figureout the best features of the data set and visualize them. If you find anything interesting, please ping me. 
+In this project we demonstarte the best practices for data visualization. We try to figureout the best features of the data set and visualize them. If you find anything interesting, please ping me. 
