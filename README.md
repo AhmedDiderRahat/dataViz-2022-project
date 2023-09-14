@@ -1,3 +1,9 @@
+---
+Title: Visualize New York City Airbnb Data
+Author: Rahat, A.D. & Sultana, Tania
+Date: July 6th, 2022
+---
+
 ### Introduction
 Data visualization is the process to develop an understanding of row data. By using this, we can get insights that are not visible in the first place. It is one of the core processes of generating information from data. In our project, we visualize the Airbnb data for New York City. We try to make some graphical representations of the features and also demonstrate the relationship between features.
 
